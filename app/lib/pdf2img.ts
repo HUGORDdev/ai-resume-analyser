@@ -8,23 +8,25 @@ let pdfjsLib: any = null;
 let isLoading = false;
 let loadPromise: Promise<any> | null = null;
 
+
 async function loadPdfJs(): Promise<any> {
   if (pdfjsLib) return pdfjsLib;
   if (loadPromise) return loadPromise;
 
-  isLoading = true;
-  // @ts-expect-error - pdfjs-dist/build/pdf.mjs is not a module
-  loadPromise = import("pdfjs-dist/build/pdf.mjs").then((lib) => {
-    // Set the worker source to use local file
+  loadPromise = (async () => {
+    // @ts-expect-error - pdfjs-dist
+    const lib = await import("pdfjs-dist/build/pdf.mjs");
+
+    // On utilise la version exacte de la lib pour appeler le bon worker
+    // On pointe vers la racine de ton dossier public
     lib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
     pdfjsLib = lib;
-    isLoading = false;
     return lib;
-  });
+  })();
 
   return loadPromise;
 }
-
 export async function convertPdfToImage(
   file: File
 ): Promise<PdfConversionResult> {
